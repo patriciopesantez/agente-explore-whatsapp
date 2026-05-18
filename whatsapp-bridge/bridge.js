@@ -17,16 +17,51 @@ const AUTH_PATH = '/app/.wwebjs_auth';
 const app = express();
 let latestQR = null;
 
-app.get('/qr', async (req, res) => {
+// Página HTML con auto-refresh cada 15s para que el QR nunca expire
+app.get('/qr', (req, res) => {
+    if (QR_TOKEN && req.query.token !== QR_TOKEN) {
+        return res.status(401).send('Token inválido');
+    }
+    const token = QR_TOKEN ? `?token=${QR_TOKEN}` : '';
+    res.setHeader('Content-Type', 'text/html');
+    res.send(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>WhatsApp QR — Explore</title>
+  <style>
+    body { background:#111; color:#fff; font-family:sans-serif; text-align:center; padding:40px; }
+    img { width:300px; height:300px; border:8px solid #fff; border-radius:12px; }
+    p { color:#aaa; margin-top:12px; }
+  </style>
+</head>
+<body>
+  <h2>Escanea con WhatsApp</h2>
+  <img id="qr" src="/qr.png${token}" alt="QR Code">
+  <p id="msg">El QR se actualiza automáticamente cada 15 segundos</p>
+  <script>
+    function refresh() {
+      var img = document.getElementById('qr');
+      img.src = '/qr.png${token}&t=' + Date.now();
+    }
+    setInterval(refresh, 15000);
+  </script>
+</body>
+</html>`);
+});
+
+// Endpoint que devuelve solo la imagen PNG del QR actual
+app.get('/qr.png', async (req, res) => {
     if (QR_TOKEN && req.query.token !== QR_TOKEN) {
         return res.status(401).send('Token inválido');
     }
     if (!latestQR) {
-        return res.status(200).send('<html><body style="background:#000;color:#fff;font-family:sans-serif;text-align:center;padding:50px"><h2>QR no disponible aún</h2><p>Espera unos segundos y recarga la página</p><script>setTimeout(()=>location.reload(),4000)</script></body></html>');
+        return res.status(404).send('QR no disponible aún');
     }
     try {
-        const png = await QRCode.toBuffer(latestQR);
+        const png = await QRCode.toBuffer(latestQR, { scale: 8 });
         res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Cache-Control', 'no-store');
         res.send(png);
     } catch (err) {
         res.status(500).send('Error generando QR');
