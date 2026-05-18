@@ -129,7 +129,7 @@ function createClient() {
         if (msg.from === 'status@broadcast') return;
         if (msg.isGroupMsg) return;
         if (msg.type === 'ptt' || msg.type === 'audio') {
-            await msg.reply('Por el momento solo puedo leer mensajes de texto. Por favor escríbeme tu consulta. ✍️');
+            await client.sendMessage(msg.from, 'Por el momento solo puedo leer mensajes de texto. Por favor escríbeme tu consulta. ✍️');
             return;
         }
         if (!msg.body || msg.type !== 'chat') return;
@@ -150,7 +150,7 @@ function createClient() {
             reply = 'Lo sentimos, en este momento no podemos procesar tu consulta. Por favor intenta en unos minutos o visita www.edificioexplore.com';
         }
 
-        await msg.reply(reply);
+        await client.sendMessage(phoneNumber, reply);
 
         if (HOST_WHATSAPP) {
             try {
