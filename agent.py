@@ -15,6 +15,19 @@ MAX_TOOL_ITERATIONS = 5
 
 TOOLS = [
     {
+        "name": "enviar_fotos",
+        "description": (
+            "Envía al cliente un pack de fotografías del Edificio Explore San Sebastián "
+            "(renders, áreas comunes, vistas, fachada). "
+            "Úsala cuando el cliente pida fotos, imágenes, renders, o quiera ver cómo es el edificio."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
         "name": "buscar_unidades_disponibles",
         "description": (
             "Consulta en tiempo real las unidades disponibles para la venta en el Edificio Explore San Sebastián. "
@@ -81,10 +94,18 @@ async def _execute_tool(name: str, inputs: dict) -> str:
     return json.dumps({"error": f"Herramienta desconocida: {name}"})
 
 
-async def get_reply(sender_id: str, user_text: str) -> str:
+async def get_reply(sender_id: str, user_text: str) -> tuple[str, bool]:
     async with _locks[sender_id]:
         history = _history[sender_id]
         history.append({"role": "user", "content": user_text})
+
+        send_photos = [False]
+
+        async def execute_tool(name: str, inputs: dict) -> str:
+            if name == "enviar_fotos":
+                send_photos[0] = True
+                return json.dumps({"resultado": "Fotografías enviadas al cliente."})
+            return await _execute_tool(name, inputs)
 
         iterations = 0
         while iterations < MAX_TOOL_ITERATIONS:
@@ -102,7 +123,7 @@ async def get_reply(sender_id: str, user_text: str) -> str:
                 tool_results = []
                 for block in response.content:
                     if block.type == "tool_use":
-                        result = await _execute_tool(block.name, block.input)
+                        result = await execute_tool(block.name, block.input)
                         tool_results.append({
                             "type": "tool_result",
                             "tool_use_id": block.id,
@@ -121,4 +142,4 @@ async def get_reply(sender_id: str, user_text: str) -> str:
         if len(history) > MAX_HISTORY_TURNS * 2:
             _history[sender_id] = history[-(MAX_HISTORY_TURNS * 2):]
 
-        return reply
+        return reply, send_photos[0]

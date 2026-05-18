@@ -1,11 +1,24 @@
 'use strict';
 
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const QRCode = require('qrcode');
 const axios = require('axios');
 const express = require('express');
 const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+const FOTOS_PATH = process.env.FOTOS_PATH || '/app/fotos';
+const FOTO_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+
+function getFotos() {
+    if (!fs.existsSync(FOTOS_PATH)) return [];
+    return fs.readdirSync(FOTOS_PATH)
+        .filter(f => FOTO_EXTENSIONS.has(path.extname(f).toLowerCase()))
+        .sort()
+        .map(f => path.join(FOTOS_PATH, f));
+}
 
 const AGENT_URL = process.env.AGENT_URL || 'http://agent:8000';
 const HOST_WHATSAPP = process.env.HOST_WHATSAPP || '';
@@ -139,18 +152,37 @@ function createClient() {
         console.log(`[bridge] Mensaje de ${phoneNumber}: ${text.substring(0, 60)}`);
 
         let reply;
+        let sendPhotos = false;
         try {
             const response = await axios.post(`${AGENT_URL}/chat`, {
                 phone_number: phoneNumber,
                 message: text,
             });
             reply = response.data.reply;
+            sendPhotos = response.data.send_photos === true;
         } catch (err) {
             console.error('[bridge] Error llamando al agente:', err.message);
             reply = 'Lo sentimos, en este momento no podemos procesar tu consulta. Por favor intenta en unos minutos o visita www.edificioexplore.com';
         }
 
         await client.sendMessage(phoneNumber, reply);
+
+        if (sendPhotos) {
+            const fotos = getFotos();
+            if (fotos.length > 0) {
+                console.log(`[bridge] Enviando ${fotos.length} foto(s) a ${phoneNumber}`);
+                for (const fotoPath of fotos) {
+                    try {
+                        const media = MessageMedia.fromFilePath(fotoPath);
+                        await client.sendMessage(phoneNumber, media);
+                    } catch (err) {
+                        console.error('[bridge] Error enviando foto:', fotoPath, err.message);
+                    }
+                }
+            } else {
+                console.warn('[bridge] send_photos=true pero no hay fotos en', FOTOS_PATH);
+            }
+        }
 
         if (HOST_WHATSAPP) {
             try {
