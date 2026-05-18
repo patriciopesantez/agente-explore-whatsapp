@@ -15,6 +15,26 @@ MAX_TOOL_ITERATIONS = 5
 
 TOOLS = [
     {
+        "name": "transferir_a_asesor",
+        "description": (
+            "Transfiere la conversación a un asesor humano y detiene las respuestas automáticas. "
+            "Úsala cuando: (1) el lead está calificado y quiere agendar una cita o reunión presencial, "
+            "(2) el cliente tiene preguntas técnicas, legales o contractuales que no puedes resolver, "
+            "(3) el cliente pide hablar con una persona. "
+            "Antes de llamarla, despídete con calidez e indica que un asesor lo contactará pronto."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "motivo": {
+                    "type": "string",
+                    "description": "Breve descripción del motivo de la transferencia (ej: 'agendar visita', 'consulta legal').",
+                }
+            },
+            "required": ["motivo"],
+        },
+    },
+    {
         "name": "enviar_fotos",
         "description": (
             "Envía al cliente un pack de fotografías del Edificio Explore San Sebastián "
@@ -94,14 +114,18 @@ async def _execute_tool(name: str, inputs: dict) -> str:
     return json.dumps({"error": f"Herramienta desconocida: {name}"})
 
 
-async def get_reply(sender_id: str, user_text: str) -> tuple[str, bool]:
+async def get_reply(sender_id: str, user_text: str) -> tuple[str, bool, str | None]:
     async with _locks[sender_id]:
         history = _history[sender_id]
         history.append({"role": "user", "content": user_text})
 
         send_photos = [False]
+        transfer_motivo = [None]
 
         async def execute_tool(name: str, inputs: dict) -> str:
+            if name == "transferir_a_asesor":
+                transfer_motivo[0] = inputs.get("motivo", "sin especificar")
+                return json.dumps({"resultado": "Asesor notificado. Conversación transferida."})
             if name == "enviar_fotos":
                 send_photos[0] = True
                 return json.dumps({"resultado": "Fotografías enviadas al cliente."})
@@ -142,4 +166,4 @@ async def get_reply(sender_id: str, user_text: str) -> tuple[str, bool]:
         if len(history) > MAX_HISTORY_TURNS * 2:
             _history[sender_id] = history[-(MAX_HISTORY_TURNS * 2):]
 
-        return reply, send_photos[0]
+        return reply, send_photos[0], transfer_motivo[0]

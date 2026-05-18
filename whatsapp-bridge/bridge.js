@@ -11,6 +11,9 @@ const path = require('path');
 
 const FOTOS_PATH = process.env.FOTOS_PATH || '/app/fotos';
 const FOTO_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+const ASESOR_WHATSAPP = process.env.ASESOR_WHATSAPP || '593989587443@c.us';
+
+const handedOff = new Set();
 
 function getFotos() {
     if (!fs.existsSync(FOTOS_PATH)) return [];
@@ -141,6 +144,7 @@ function createClient() {
         if (msg.fromMe) return;
         if (msg.from === 'status@broadcast') return;
         if (msg.isGroupMsg) return;
+        if (handedOff.has(msg.from)) return;
         if (msg.type === 'ptt' || msg.type === 'audio') {
             await client.sendMessage(msg.from, 'Por el momento solo puedo leer mensajes de texto. Por favor escríbeme tu consulta. ✍️');
             return;
@@ -153,6 +157,7 @@ function createClient() {
 
         let reply;
         let sendPhotos = false;
+        let transferMotivo = null;
         try {
             const response = await axios.post(`${AGENT_URL}/chat`, {
                 phone_number: phoneNumber,
@@ -160,6 +165,7 @@ function createClient() {
             });
             reply = response.data.reply;
             sendPhotos = response.data.send_photos === true;
+            transferMotivo = response.data.transfer_motivo || null;
         } catch (err) {
             console.error('[bridge] Error llamando al agente:', err.message);
             reply = 'Lo sentimos, en este momento no podemos procesar tu consulta. Por favor intenta en unos minutos o visita www.edificioexplore.com';
@@ -181,6 +187,22 @@ function createClient() {
                 }
             } else {
                 console.warn('[bridge] send_photos=true pero no hay fotos en', FOTOS_PATH);
+            }
+        }
+
+        if (transferMotivo) {
+            handedOff.add(phoneNumber);
+            console.log(`[bridge] Conversación transferida a asesor: ${phoneNumber} — motivo: ${transferMotivo}`);
+            try {
+                const contact = await client.getContactById(phoneNumber);
+                const name = contact.pushname || phoneNumber.replace('@c.us', '');
+                const waLink = `https://wa.me/${phoneNumber.replace('@c.us', '')}`;
+                await client.sendMessage(
+                    ASESOR_WHATSAPP,
+                    `🔔 *Acción requerida — Agente Explore*\n\n*Cliente:* ${name}\n*Número:* ${waLink}\n*Motivo:* ${transferMotivo}\n\nRevisa WhatsApp para coordinar la cita o responder la consulta.`
+                );
+            } catch (err) {
+                console.error('[bridge] Error notificando al asesor:', err.message);
             }
         }
 

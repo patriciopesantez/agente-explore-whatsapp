@@ -26,6 +26,6 @@ async def log_requests(request, call_next):
 async def chat(req: ChatRequest):
     text = req.message[:MAX_MESSAGE_LENGTH]
     logger.info("Mensaje de %s (%d chars)", req.phone_number, len(text))
-    reply, send_photos = await get_reply(req.phone_number, text)
-    logger.info("Respuesta enviada a %s (fotos: %s)", req.phone_number, send_photos)
-    return {"reply": reply, "send_photos": send_photos}
+    reply, send_photos, transfer_motivo = await get_reply(req.phone_number, text)
+    logger.info("Respuesta enviada a %s (fotos: %s, transferencia: %s)", req.phone_number, send_photos, transfer_motivo)
+    return {"reply": reply, "send_photos": send_photos, "transfer_motivo": transfer_motivo}
