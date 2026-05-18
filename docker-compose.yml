@@ -12,7 +12,7 @@ services:
     environment:
       - AGENT_URL=http://agent:8000
     ports:
-      - "3001:3001"
+      - "3002:3001"
     volumes:
       - whatsapp_session:/app/.wwebjs_auth
     depends_on:

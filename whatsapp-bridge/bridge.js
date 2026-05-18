@@ -11,7 +11,7 @@ const path = require('path');
 const AGENT_URL = process.env.AGENT_URL || 'http://agent:8000';
 const HOST_WHATSAPP = process.env.HOST_WHATSAPP || '';
 const QR_TOKEN = process.env.QR_TOKEN || '';
-const PORT = 3001;
+const PORT = process.env.QR_PORT || 3001;
 
 // ── QR HTTP server ────────────────────────────────────────────────────────────
 const app = express();
