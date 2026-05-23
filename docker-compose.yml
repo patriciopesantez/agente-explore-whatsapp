@@ -19,8 +19,8 @@ services:
     depends_on:
       - agent
     restart: unless-stopped
-    mem_limit: 900m
-    memswap_limit: 900m
+    mem_limit: 1536m
+    memswap_limit: 2048m
 
 volumes:
   whatsapp_session:

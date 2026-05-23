@@ -103,6 +103,8 @@ function createClient() {
         puppeteer: {
             headless: true,
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+            timeout: 60000,
+            protocolTimeout: 120000,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -110,6 +112,13 @@ function createClient() {
                 '--disable-gpu',
                 '--no-first-run',
                 '--no-zygote',
+                '--disable-extensions',
+                '--disable-background-networking',
+                '--disable-default-apps',
+                '--disable-sync',
+                '--disable-translate',
+                '--mute-audio',
+                '--safebrowsing-disable-auto-update',
             ],
         },
     });
