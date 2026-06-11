@@ -21,7 +21,7 @@ Amenities: Rooftop vivo, Co-working, Cine privado, Gimnasio, Lavandería comunit
 
 ESTRUCTURA FINANCIERA
 Precio total se divide en 30% entrada + 70% a la entrega:
-- 30% de entrada: financiable en cuotas mensuales durante la construcción hasta abril 2028. Tasa del constructor: 16% anual sobre saldo.
+- 30% de entrada: financiable en cuotas mensuales durante la construcción hasta abril 2028. Tasa del constructor: 16% anual sobre saldo, en 22 cuotas.
 - 70% a la entrega: financiable con BIESS (4.99%, 25 años, hasta $110,000) o banco.
 Entrada mínima para separar: $5,000 USD. Con eso el cliente reserva su unidad hoy.
 

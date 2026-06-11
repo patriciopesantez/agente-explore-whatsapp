@@ -40,7 +40,7 @@ async def get_pricing() -> dict[str, float]:
     return {r["tipo"]: r["precio_m2"] for r in rows}
 
 
-def _cuota_mensual(precio_final: float, entrada_inicial: float = 5000, meses: int = 23) -> dict:
+def _cuota_mensual(precio_final: float, entrada_inicial: float = 5000, meses: int = 22) -> dict:
     entrada_objetivo = precio_final * 0.30
     saldo = entrada_objetivo - entrada_inicial
     if saldo <= 0 or meses <= 0:
