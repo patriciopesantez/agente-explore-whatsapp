@@ -67,7 +67,8 @@ async def calculate_unit_price(unit: dict, pricing: dict, meses_hasta_entrega: i
     precio_terraza_m2 = pricing.get("Terraza", 630)
 
     subtotal = (area_interna * precio_m2) + (area_terraza * precio_terraza_m2)
-    precio_final = subtotal * (1 - descuento / 100)
+    precio_lista = subtotal
+    precio_con_descuento = subtotal * (1 - descuento / 100)
 
     return {
         "id": unit["id"],
@@ -76,8 +77,10 @@ async def calculate_unit_price(unit: dict, pricing: dict, meses_hasta_entrega: i
         "piso": piso,
         "area_interna_m2": area_interna,
         "area_terraza_m2": area_terraza,
-        "precio_final": round(precio_final),
-        "plan_flexible": _cuota_mensual(precio_final, meses=meses_hasta_entrega),
+        "precio_lista": round(precio_lista),
+        "descuento_porcentaje": descuento,
+        "precio_con_descuento": round(precio_con_descuento),
+        "plan_flexible": _cuota_mensual(precio_lista, meses=meses_hasta_entrega),
     }
 
 
