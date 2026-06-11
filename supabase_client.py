@@ -1,5 +1,13 @@
 import httpx
+from datetime import date
 from config import SUPABASE_URL, SUPABASE_SERVICE_KEY
+
+_ENTREGA = date(2028, 4, 1)
+
+def _meses_hasta_entrega() -> int:
+    hoy = date.today()
+    meses = (_ENTREGA.year - hoy.year) * 12 + (_ENTREGA.month - hoy.month)
+    return max(meses, 1)
 
 _HEADERS = {
     "apikey": SUPABASE_SERVICE_KEY,
@@ -57,7 +65,9 @@ def _cuota_mensual(precio_final: float, entrada_inicial: float = 5000, meses: in
     }
 
 
-async def calculate_unit_price(unit: dict, pricing: dict, meses_hasta_entrega: int = 23) -> dict:
+async def calculate_unit_price(unit: dict, pricing: dict, meses_hasta_entrega: int = None) -> dict:
+    if meses_hasta_entrega is None:
+        meses_hasta_entrega = _meses_hasta_entrega()
     area_interna = unit.get("area_interna", 0)
     area_terraza = unit.get("area_terraza", 0)
     descuento = unit.get("descuento_porcentaje", 0)
