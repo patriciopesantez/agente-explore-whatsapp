@@ -65,7 +65,7 @@ def _cuota_mensual(precio_final: float, entrada_inicial: float = 5000, meses: in
     }
 
 
-async def calculate_unit_price(unit: dict, pricing: dict, meses_hasta_entrega: int = None) -> dict:
+async def calculate_unit_price(unit: dict, pricing: dict, meses_hasta_entrega: int = None, entrada_inicial: float = 5000) -> dict:
     if meses_hasta_entrega is None:
         meses_hasta_entrega = _meses_hasta_entrega()
     area_interna = unit.get("area_interna", 0)
@@ -90,7 +90,7 @@ async def calculate_unit_price(unit: dict, pricing: dict, meses_hasta_entrega: i
         "precio_lista": round(precio_lista),
         "descuento_porcentaje": descuento,
         "precio_con_descuento": round(precio_con_descuento),
-        "plan_flexible": _cuota_mensual(precio_lista, meses=meses_hasta_entrega),
+        "plan_flexible": _cuota_mensual(precio_lista, entrada_inicial=entrada_inicial, meses=meses_hasta_entrega),
     }
 
 

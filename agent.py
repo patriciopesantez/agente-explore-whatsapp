@@ -61,7 +61,11 @@ TOOLS = [
                     "type": "string",
                     "enum": ["Studio", "Suite", "Departamento"],
                     "description": "Filtrar por tipo de unidad. Omitir para ver todos los tipos.",
-                }
+                },
+                "entrada_inicial": {
+                    "type": "number",
+                    "description": "Monto que el cliente pagará como entrada inicial. Por defecto $5,000. Usar cuando el cliente indique un monto diferente.",
+                },
             },
             "required": [],
         },
@@ -91,13 +95,14 @@ TOOLS = [
 async def _execute_tool(name: str, inputs: dict) -> str:
     if name == "buscar_unidades_disponibles":
         tipo = inputs.get("tipo")
+        entrada_inicial = inputs.get("entrada_inicial", 5000)
         units = await get_available_units(tipo)
         if not units:
             return json.dumps({"resultado": "No hay unidades disponibles con ese criterio en este momento."})
         pricing = await get_pricing()
         result = []
         for u in units:
-            precio = await calculate_unit_price(u, pricing)
+            precio = await calculate_unit_price(u, pricing, entrada_inicial=entrada_inicial)
             result.append(precio)
         return json.dumps(result, ensure_ascii=False)
 
