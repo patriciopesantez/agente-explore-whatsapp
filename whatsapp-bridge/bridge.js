@@ -257,6 +257,9 @@ function createClient() {
     client.on('message_create', async (msg) => {
         if (!msg.fromMe) return;
         const to = normalizeId(msg.to);
+        const lastSend = botSendWindow.get(to);
+        const age = lastSend ? Date.now() - lastSend : null;
+        console.log(`[bridge][debug] message_create: to=${msg.to} body="${(msg.body||'').substring(0,30)}" windowAge=${age !== null ? age+'ms' : 'NONE'} handedOff=${handedOff.has(to)}`);
 
         if (msg.body === '!reactivar') {
             if (handedOff.has(to)) {
@@ -266,9 +269,8 @@ function createClient() {
             return;
         }
 
-        // Ignorar si el bot envió a este número en los últimos 5s
-        const lastSend = botSendWindow.get(to);
-        if (lastSend && (Date.now() - lastSend) < 5000) return;
+        // Ignorar si el bot envió a este número en los últimos 30s
+        if (lastSend && age < 30000) return;
 
         if (!handedOff.has(to)) {
             handedOff.add(to);
