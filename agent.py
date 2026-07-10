@@ -17,11 +17,12 @@ TOOLS = [
     {
         "name": "transferir_a_asesor",
         "description": (
-            "Notifica a un asesor humano para que haga seguimiento al cliente. "
-            "Úsala cuando: (1) el lead está calificado y quiere agendar una cita o reunión presencial, "
-            "(2) el cliente tiene preguntas técnicas, legales o contractuales que no puedes resolver, "
-            "(3) el cliente pide hablar con una persona. "
-            "Al usarla, indica al cliente que un asesor lo contactará pronto y ofrécete a seguir respondiendo dudas."
+            "Notifica a un asesor humano. Úsala ÚNICAMENTE cuando: "
+            "(1) el lead está calificado y quiere coordinar una cita virtual o presencial para avanzar hacia la reserva, "
+            "(2) el cliente pide explícitamente hablar con una persona, "
+            "(3) el cliente plantea una consulta legal o técnica que no puedes responder con certeza después de intentarlo. "
+            "NO la uses para preguntas generales, dudas de precio, ni solicitudes de información — esas las resuelves tú. "
+            "Al usarla, indica al cliente que un asesor lo contactará pronto y continúa disponible para otras dudas."
         ),
         "input_schema": {
             "type": "object",
