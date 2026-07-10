@@ -183,7 +183,7 @@ function createClient() {
             transferMotivo = response.data.transfer_motivo || null;
         } catch (err) {
             console.error('[bridge] Error llamando al agente:', err.message);
-            reply = 'Lo sentimos, en este momento no podemos procesar tu consulta. Por favor intenta en unos minutos o visita www.edificioexplore.com';
+            reply = 'En breve un asesor especializado te contactará por este medio. Si tienes alguna otra consulta, con gusto te ayudo. 😊';
         }
 
         aiSending.add(normalizeId(phoneNumber));

@@ -149,7 +149,7 @@ async def get_reply(sender_id: str, user_text: str) -> tuple[str, bool, str | No
             except Exception as e:
                 import logging
                 logging.getLogger(__name__).error("Error en API de Anthropic: %s", e)
-                reply = "En este momento no puedo procesar tu consulta. Por favor escríbenos directamente a través de www.edificioexplore.com"
+                reply = "En breve un asesor especializado te contactará por este medio. Si tienes alguna otra consulta, con gusto te ayudo. 😊"
                 history.append({"role": "assistant", "content": reply})
                 break
 
@@ -170,11 +170,11 @@ async def get_reply(sender_id: str, user_text: str) -> tuple[str, bool, str | No
 
             reply = next((b.text for b in response.content if hasattr(b, "text")), None)
             if not reply:
-                reply = "En este momento no puedo procesar tu consulta. Por favor escríbenos directamente a través de www.edificioexplore.com"
+                reply = "En breve un asesor especializado te contactará por este medio. Si tienes alguna otra consulta, con gusto te ayudo. 😊"
             history.append({"role": "assistant", "content": reply})
             break
         else:
-            reply = "En este momento no puedo procesar tu consulta. Por favor escríbenos directamente a través de www.edificioexplore.com"
+            reply = "En breve un asesor especializado te contactará por este medio. Si tienes alguna otra consulta, con gusto te ayudo. 😊"
             history.append({"role": "assistant", "content": reply})
 
         if len(history) > MAX_HISTORY_TURNS * 2:
