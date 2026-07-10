@@ -6,7 +6,7 @@ import anthropic
 from config import ANTHROPIC_API_KEY, SYSTEM_PROMPT
 from supabase_client import get_available_units, get_pricing, calculate_unit_price, register_lead
 
-client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
 
 _history: dict[str, List[dict]] = defaultdict(list)
 _locks: dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
@@ -139,7 +139,7 @@ async def get_reply(sender_id: str, user_text: str) -> tuple[str, bool, str | No
         iterations = 0
         while iterations < MAX_TOOL_ITERATIONS:
             try:
-                response = client.messages.create(
+                response = await client.messages.create(
                     model="claude-sonnet-4-6",
                     max_tokens=1024,
                     system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],

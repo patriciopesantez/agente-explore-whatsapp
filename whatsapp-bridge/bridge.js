@@ -11,8 +11,12 @@ const path = require('path');
 
 const FOTOS_PATH = process.env.FOTOS_PATH || '/app/fotos';
 const FOTO_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+function toWaId(n) {
+    return n.trim().replace(/^\+/, '').replace(/@.*$/, '') + '@c.us';
+}
 const ASESORES_WHATSAPP = (process.env.ASESOR_WHATSAPP || '593995111815,593989587443,593984506432')
-    .split(',').map(n => n.trim()).filter(Boolean).map(n => n.includes('@') ? n : `${n}@c.us`);
+    .split(',').filter(Boolean).map(toWaId);
+const HOST_WA = process.env.HOST_WHATSAPP ? toWaId(process.env.HOST_WHATSAPP) : '';
 
 const handedOff = new Set();
 const aiSending = new Set();
@@ -232,13 +236,13 @@ function createClient() {
             }
         }
 
-        if (HOST_WHATSAPP) {
+        if (HOST_WA) {
             try {
                 const contact = await client.getContactById(phoneNumber);
                 const name = contact.pushname || phoneNumber;
                 const waLink = `https://wa.me/${phoneNumber.replace('@c.us', '')}`;
                 await client.sendMessage(
-                    HOST_WHATSAPP,
+                    HOST_WA,
                     `📩 *Nuevo mensaje — Agente Explore*\n*Cliente:* ${name}\n*Número:* ${waLink}\n*Mensaje:* ${text.substring(0, 200)}`
                 );
             } catch (err) {
