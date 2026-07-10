@@ -17,11 +17,11 @@ TOOLS = [
     {
         "name": "transferir_a_asesor",
         "description": (
-            "Transfiere la conversación a un asesor humano y detiene las respuestas automáticas. "
+            "Notifica a un asesor humano para que haga seguimiento al cliente. "
             "Úsala cuando: (1) el lead está calificado y quiere agendar una cita o reunión presencial, "
             "(2) el cliente tiene preguntas técnicas, legales o contractuales que no puedes resolver, "
             "(3) el cliente pide hablar con una persona. "
-            "Antes de llamarla, despídete con calidez e indica que un asesor lo contactará pronto."
+            "Al usarla, indica al cliente que un asesor lo contactará pronto y ofrécete a seguir respondiendo dudas."
         ),
         "input_schema": {
             "type": "object",

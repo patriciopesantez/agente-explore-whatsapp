@@ -213,8 +213,7 @@ function createClient() {
         }
 
         if (transferMotivo) {
-            handedOff.add(normalizeId(phoneNumber));
-            console.log(`[bridge] Conversación transferida a asesor: ${phoneNumber} — motivo: ${transferMotivo}`);
+            console.log(`[bridge] Notificando a asesor: ${phoneNumber} — motivo: ${transferMotivo}`);
             try {
                 const contact = await client.getContactById(phoneNumber);
                 const name = contact.pushname || phoneNumber.replace('@c.us', '');
