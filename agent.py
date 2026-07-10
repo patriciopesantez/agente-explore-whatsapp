@@ -138,13 +138,20 @@ async def get_reply(sender_id: str, user_text: str) -> tuple[str, bool, str | No
 
         iterations = 0
         while iterations < MAX_TOOL_ITERATIONS:
-            response = client.messages.create(
-                model="claude-sonnet-4-6",
-                max_tokens=1024,
-                system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
-                tools=TOOLS,
-                messages=history,
-            )
+            try:
+                response = client.messages.create(
+                    model="claude-sonnet-4-6",
+                    max_tokens=1024,
+                    system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
+                    tools=TOOLS,
+                    messages=history,
+                )
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error("Error en API de Anthropic: %s", e)
+                reply = "En este momento no puedo procesar tu consulta. Por favor escríbenos directamente a través de www.edificioexplore.com"
+                history.append({"role": "assistant", "content": reply})
+                break
 
             if response.stop_reason == "tool_use":
                 iterations += 1
@@ -161,7 +168,9 @@ async def get_reply(sender_id: str, user_text: str) -> tuple[str, bool, str | No
                 history.append({"role": "user", "content": tool_results})
                 continue
 
-            reply = next(b.text for b in response.content if hasattr(b, "text"))
+            reply = next((b.text for b in response.content if hasattr(b, "text")), None)
+            if not reply:
+                reply = "En este momento no puedo procesar tu consulta. Por favor escríbenos directamente a través de www.edificioexplore.com"
             history.append({"role": "assistant", "content": reply})
             break
         else:
