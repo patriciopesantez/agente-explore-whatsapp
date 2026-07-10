@@ -239,19 +239,6 @@ function createClient() {
             }
         }
 
-        if (HOST_WA) {
-            try {
-                const contact = await client.getContactById(phoneNumber);
-                const name = contact.pushname || phoneNumber;
-                const waLink = `https://wa.me/${phoneNumber.replace('@c.us', '')}`;
-                await client.sendMessage(
-                    HOST_WA,
-                    `📩 *Nuevo mensaje — Agente Explore*\n*Cliente:* ${name}\n*Número:* ${waLink}\n*Mensaje:* ${text.substring(0, 200)}`
-                );
-            } catch (err) {
-                console.error('[bridge] Error notificando al host:', err.message);
-            }
-        }
     });
 
     client.on('message_create', async (msg) => {
