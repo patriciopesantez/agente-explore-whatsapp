@@ -15,30 +15,24 @@ _HEADERS = {
     "Content-Type": "application/json",
 }
 _BASE = f"{SUPABASE_URL}/rest/v1"
-_TIMEOUT = httpx.Timeout(10.0)
 
 
 async def _get(path: str, params: dict = None) -> list:
-    async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+    async with httpx.AsyncClient() as client:
         r = await client.get(f"{_BASE}{path}", headers=_HEADERS, params=params)
         r.raise_for_status()
         return r.json()
 
 
 async def _post(path: str, data: dict) -> dict:
-    async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+    async with httpx.AsyncClient() as client:
         r = await client.post(
             f"{_BASE}{path}",
             headers={**_HEADERS, "Prefer": "return=representation"},
             json=data,
         )
         r.raise_for_status()
-        result = r.json()
-        if isinstance(result, list):
-            if not result:
-                raise ValueError(f"Supabase devolvió lista vacía para POST {path}")
-            return result[0]
-        return result
+        return r.json()
 
 
 async def get_available_units(tipo: str = None) -> list[dict]:
@@ -79,7 +73,7 @@ async def calculate_unit_price(unit: dict, pricing: dict, meses_hasta_entrega: i
     descuento = unit.get("descuento_porcentaje", 0)
     piso = unit.get("piso", 1)
 
-    precio_m2 = 2000 + (50 * piso)
+    precio_m2 = 2000 + (50 * piso)  # prima por piso: $50 × número de piso
     precio_terraza_m2 = pricing.get("Terraza", 630)
 
     subtotal = (area_interna * precio_m2) + (area_terraza * precio_terraza_m2)
@@ -111,4 +105,5 @@ async def register_lead(nombre: str, telefono: str, interes: str, mensaje: str, 
             "canal": "WhatsApp",
         },
     }
-    return await _post("/leads", data)
+    result = await _post("/leads", data)
+    return result[0] if isinstance(result, list) else result

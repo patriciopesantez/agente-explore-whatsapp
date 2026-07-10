@@ -1,15 +1,12 @@
 import asyncio
 import json
-import logging
 from collections import defaultdict
 from typing import List
 import anthropic
 from config import ANTHROPIC_API_KEY, SYSTEM_PROMPT
 from supabase_client import get_available_units, get_pricing, calculate_unit_price, register_lead
 
-logger = logging.getLogger(__name__)
-
-client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
+client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 _history: dict[str, List[dict]] = defaultdict(list)
 _locks: dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
@@ -125,8 +122,6 @@ async def _execute_tool(name: str, inputs: dict) -> str:
 async def get_reply(sender_id: str, user_text: str) -> tuple[str, bool, str | None]:
     async with _locks[sender_id]:
         history = _history[sender_id]
-        snapshot = list(history)
-
         history.append({"role": "user", "content": user_text})
 
         send_photos = [False]
@@ -141,52 +136,39 @@ async def get_reply(sender_id: str, user_text: str) -> tuple[str, bool, str | No
                 return json.dumps({"resultado": "Fotografías enviadas al cliente."})
             return await _execute_tool(name, inputs)
 
-        try:
-            iterations = 0
-            while iterations < MAX_TOOL_ITERATIONS:
-                response = await client.messages.create(
-                    model="claude-sonnet-4-6",
-                    max_tokens=1024,
-                    system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
-                    tools=TOOLS,
-                    messages=history,
-                )
+        iterations = 0
+        while iterations < MAX_TOOL_ITERATIONS:
+            response = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=1024,
+                system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
+                tools=TOOLS,
+                messages=history,
+            )
 
-                if response.stop_reason == "tool_use":
-                    iterations += 1
-                    history.append({"role": "assistant", "content": response.content})
-                    tool_results = []
-                    for block in response.content:
-                        if block.type == "tool_use":
-                            result = await execute_tool(block.name, block.input)
-                            tool_results.append({
-                                "type": "tool_result",
-                                "tool_use_id": block.id,
-                                "content": result,
-                            })
-                    history.append({"role": "user", "content": tool_results})
-                    continue
+            if response.stop_reason == "tool_use":
+                iterations += 1
+                history.append({"role": "assistant", "content": response.content})
+                tool_results = []
+                for block in response.content:
+                    if block.type == "tool_use":
+                        result = await execute_tool(block.name, block.input)
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": result,
+                        })
+                history.append({"role": "user", "content": tool_results})
+                continue
 
-                reply = next((b.text for b in response.content if hasattr(b, "text")), None)
-                if reply is None:
-                    raise ValueError(f"Respuesta de Claude sin bloque de texto: {response.content}")
-                history.append({"role": "assistant", "content": reply})
-                break
-            else:
-                reply = "En este momento no puedo procesar tu consulta. Por favor escríbenos directamente a través de www.edificioexplore.com"
-                history.append({"role": "assistant", "content": reply})
-
-        except Exception:
-            logger.exception("Error en get_reply para %s — restaurando historial", sender_id)
-            _history[sender_id] = snapshot
-            reply = "Lo sentimos, tuvimos un problema procesando tu mensaje. Por favor intenta de nuevo o visita www.edificioexplore.com"
-            return reply, False, None
+            reply = next(b.text for b in response.content if hasattr(b, "text"))
+            history.append({"role": "assistant", "content": reply})
+            break
+        else:
+            reply = "En este momento no puedo procesar tu consulta. Por favor escríbenos directamente a través de www.edificioexplore.com"
+            history.append({"role": "assistant", "content": reply})
 
         if len(history) > MAX_HISTORY_TURNS * 2:
             _history[sender_id] = history[-(MAX_HISTORY_TURNS * 2):]
-
-        # Limpiar lock si el usuario ya no tiene historial activo
-        if not _history.get(sender_id):
-            _locks.pop(sender_id, None)
 
         return reply, send_photos[0], transfer_motivo[0]
