@@ -21,9 +21,6 @@ services:
     restart: unless-stopped
     mem_limit: 1536m
     memswap_limit: 2048m
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
 
 volumes:
   whatsapp_session:
