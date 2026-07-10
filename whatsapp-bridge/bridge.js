@@ -19,16 +19,16 @@ const ASESORES_WHATSAPP = (process.env.ASESOR_WHATSAPP || '593995111815,59398958
 const HOST_WA = process.env.HOST_WHATSAPP ? toWaId(process.env.HOST_WHATSAPP) : '';
 
 const handedOff = new Set();
-const botMsgIds = new Set(); // IDs de mensajes enviados por el bot
+const botSendWindow = new Map(); // normalizedId → timestamp del último envío del bot
 
 async function sendBot(client, to, content) {
-    const sent = await client.sendMessage(to, content);
-    const id = sent?.id?._serialized;
-    if (id) {
-        botMsgIds.add(id);
-        setTimeout(() => botMsgIds.delete(id), 10000);
+    const key = normalizeId(to);
+    botSendWindow.set(key, Date.now()); // marcar ANTES de sendMessage
+    try {
+        return await client.sendMessage(to, content);
+    } finally {
+        setTimeout(() => botSendWindow.delete(key), 5000);
     }
-    return sent;
 }
 
 function normalizeId(id) {
@@ -256,10 +256,6 @@ function createClient() {
 
     client.on('message_create', async (msg) => {
         if (!msg.fromMe) return;
-
-        // Ignorar mensajes enviados por el bot
-        if (botMsgIds.has(msg.id?._serialized)) return;
-
         const to = normalizeId(msg.to);
 
         if (msg.body === '!reactivar') {
@@ -269,6 +265,10 @@ function createClient() {
             }
             return;
         }
+
+        // Ignorar si el bot envió a este número en los últimos 5s
+        const lastSend = botSendWindow.get(to);
+        if (lastSend && (Date.now() - lastSend) < 5000) return;
 
         if (!handedOff.has(to)) {
             handedOff.add(to);
