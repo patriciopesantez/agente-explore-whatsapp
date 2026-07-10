@@ -11,7 +11,8 @@ const path = require('path');
 
 const FOTOS_PATH = process.env.FOTOS_PATH || '/app/fotos';
 const FOTO_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
-const ASESOR_WHATSAPP = process.env.ASESOR_WHATSAPP || '593989587443@c.us';
+const ASESORES_WHATSAPP = (process.env.ASESOR_WHATSAPP || '593995111815,593989587443,593984506432')
+    .split(',').map(n => n.trim()).filter(Boolean).map(n => n.includes('@') ? n : `${n}@c.us`);
 
 const handedOff = new Set();
 const aiSending = new Set();
@@ -218,10 +219,14 @@ function createClient() {
                 const contact = await client.getContactById(phoneNumber);
                 const name = contact.pushname || phoneNumber.replace('@c.us', '');
                 const waLink = `https://wa.me/${phoneNumber.replace('@c.us', '')}`;
-                await client.sendMessage(
-                    ASESOR_WHATSAPP,
-                    `🔔 *Acción requerida — Agente Explore*\n\n*Cliente:* ${name}\n*Número:* ${waLink}\n*Motivo:* ${transferMotivo}\n\nRevisa WhatsApp para coordinar la cita o responder la consulta.`
-                );
+                const msg = `🔔 *Acción requerida — Agente Explore*\n\n*Cliente:* ${name}\n*Número:* ${waLink}\n*Motivo:* ${transferMotivo}\n\nRevisa WhatsApp para coordinar la cita o responder la consulta.`;
+                for (const asesor of ASESORES_WHATSAPP) {
+                    try {
+                        await client.sendMessage(asesor, msg);
+                    } catch (e) {
+                        console.error(`[bridge] Error notificando a asesor ${asesor}:`, e.message);
+                    }
+                }
             } catch (err) {
                 console.error('[bridge] Error notificando al asesor:', err.message);
             }
