@@ -19,7 +19,17 @@ const ASESORES_WHATSAPP = (process.env.ASESOR_WHATSAPP || '593995111815,59398958
 const HOST_WA = process.env.HOST_WHATSAPP ? toWaId(process.env.HOST_WHATSAPP) : '';
 
 const handedOff = new Set();
-const aiSending = new Set();
+const botMsgIds = new Set(); // IDs de mensajes enviados por el bot
+
+async function sendBot(client, to, content) {
+    const sent = await client.sendMessage(to, content);
+    const id = sent?.id?._serialized;
+    if (id) {
+        botMsgIds.add(id);
+        setTimeout(() => botMsgIds.delete(id), 10000);
+    }
+    return sent;
+}
 
 function normalizeId(id) {
     return id ? id.split('@')[0] : id;
@@ -190,12 +200,7 @@ function createClient() {
             reply = 'En breve un asesor especializado te contactará por este medio. Si tienes alguna otra consulta, con gusto te ayudo. 😊';
         }
 
-        aiSending.add(normalizeId(phoneNumber));
-        try {
-            await client.sendMessage(phoneNumber, reply);
-        } finally {
-            aiSending.delete(normalizeId(phoneNumber));
-        }
+        await sendBot(client, phoneNumber, reply);
 
         if (sendPhotos) {
             const fotos = getFotos();
@@ -203,13 +208,11 @@ function createClient() {
                 console.log(`[bridge] Enviando ${fotos.length} foto(s) a ${phoneNumber}`);
                 for (const fotoPath of fotos) {
                     try {
-                        aiSending.add(normalizeId(phoneNumber));
-                        const media = MessageMedia.fromFilePath(fotoPath);
-                        await client.sendMessage(phoneNumber, media);
+                            const media = MessageMedia.fromFilePath(fotoPath);
+                        await sendBot(client, phoneNumber, media);
                     } catch (err) {
                         console.error('[bridge] Error enviando foto:', fotoPath, err.message);
                     } finally {
-                        aiSending.delete(normalizeId(phoneNumber));
                     }
                 }
             } else {
@@ -253,6 +256,10 @@ function createClient() {
 
     client.on('message_create', async (msg) => {
         if (!msg.fromMe) return;
+
+        // Ignorar mensajes enviados por el bot
+        if (botMsgIds.has(msg.id?._serialized)) return;
+
         const to = normalizeId(msg.to);
 
         if (msg.body === '!reactivar') {
@@ -263,7 +270,7 @@ function createClient() {
             return;
         }
 
-        if (!aiSending.has(to) && !handedOff.has(to)) {
+        if (!handedOff.has(to)) {
             handedOff.add(to);
             console.log(`[bridge] IA pausada por intervención humana en ${to}`);
         }
