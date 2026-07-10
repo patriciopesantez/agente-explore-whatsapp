@@ -14,6 +14,7 @@ const FOTO_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
 const ASESOR_WHATSAPP = process.env.ASESOR_WHATSAPP || '593989587443@c.us';
 
 const handedOff = new Set();
+const aiSending = new Set();
 
 function getFotos() {
     if (!fs.existsSync(FOTOS_PATH)) return [];
@@ -180,7 +181,12 @@ function createClient() {
             reply = 'Lo sentimos, en este momento no podemos procesar tu consulta. Por favor intenta en unos minutos o visita www.edificioexplore.com';
         }
 
-        await client.sendMessage(phoneNumber, reply);
+        aiSending.add(phoneNumber);
+        try {
+            await client.sendMessage(phoneNumber, reply);
+        } finally {
+            aiSending.delete(phoneNumber);
+        }
 
         if (sendPhotos) {
             const fotos = getFotos();
@@ -188,10 +194,13 @@ function createClient() {
                 console.log(`[bridge] Enviando ${fotos.length} foto(s) a ${phoneNumber}`);
                 for (const fotoPath of fotos) {
                     try {
+                        aiSending.add(phoneNumber);
                         const media = MessageMedia.fromFilePath(fotoPath);
                         await client.sendMessage(phoneNumber, media);
                     } catch (err) {
                         console.error('[bridge] Error enviando foto:', fotoPath, err.message);
+                    } finally {
+                        aiSending.delete(phoneNumber);
                     }
                 }
             } else {
@@ -227,6 +236,24 @@ function createClient() {
             } catch (err) {
                 console.error('[bridge] Error notificando al host:', err.message);
             }
+        }
+    });
+
+    client.on('message_create', async (msg) => {
+        if (!msg.fromMe) return;
+        const to = msg.to;
+
+        if (msg.body === '!reactivar') {
+            if (handedOff.has(to)) {
+                handedOff.delete(to);
+                console.log(`[bridge] IA reactivada para ${to}`);
+            }
+            return;
+        }
+
+        if (!aiSending.has(to) && !handedOff.has(to)) {
+            handedOff.add(to);
+            console.log(`[bridge] IA pausada por intervención humana en ${to}`);
         }
     });
 
