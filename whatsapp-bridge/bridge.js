@@ -16,6 +16,10 @@ const ASESOR_WHATSAPP = process.env.ASESOR_WHATSAPP || '593989587443@c.us';
 const handedOff = new Set();
 const aiSending = new Set();
 
+function normalizeId(id) {
+    return id ? id.split('@')[0] : id;
+}
+
 function getFotos() {
     if (!fs.existsSync(FOTOS_PATH)) return [];
     return fs.readdirSync(FOTOS_PATH)
@@ -154,7 +158,7 @@ function createClient() {
         if (msg.fromMe) return;
         if (msg.from === 'status@broadcast') return;
         if (msg.isGroupMsg) return;
-        if (handedOff.has(msg.from)) return;
+        if (handedOff.has(normalizeId(msg.from))) return;
         if (msg.type === 'ptt' || msg.type === 'audio') {
             await client.sendMessage(msg.from, 'Por el momento solo puedo leer mensajes de texto. Por favor escríbeme tu consulta. ✍️');
             return;
@@ -181,11 +185,11 @@ function createClient() {
             reply = 'Lo sentimos, en este momento no podemos procesar tu consulta. Por favor intenta en unos minutos o visita www.edificioexplore.com';
         }
 
-        aiSending.add(phoneNumber);
+        aiSending.add(normalizeId(phoneNumber));
         try {
             await client.sendMessage(phoneNumber, reply);
         } finally {
-            aiSending.delete(phoneNumber);
+            aiSending.delete(normalizeId(phoneNumber));
         }
 
         if (sendPhotos) {
@@ -194,13 +198,13 @@ function createClient() {
                 console.log(`[bridge] Enviando ${fotos.length} foto(s) a ${phoneNumber}`);
                 for (const fotoPath of fotos) {
                     try {
-                        aiSending.add(phoneNumber);
+                        aiSending.add(normalizeId(phoneNumber));
                         const media = MessageMedia.fromFilePath(fotoPath);
                         await client.sendMessage(phoneNumber, media);
                     } catch (err) {
                         console.error('[bridge] Error enviando foto:', fotoPath, err.message);
                     } finally {
-                        aiSending.delete(phoneNumber);
+                        aiSending.delete(normalizeId(phoneNumber));
                     }
                 }
             } else {
@@ -209,7 +213,7 @@ function createClient() {
         }
 
         if (transferMotivo) {
-            handedOff.add(phoneNumber);
+            handedOff.add(normalizeId(phoneNumber));
             console.log(`[bridge] Conversación transferida a asesor: ${phoneNumber} — motivo: ${transferMotivo}`);
             try {
                 const contact = await client.getContactById(phoneNumber);
@@ -241,7 +245,7 @@ function createClient() {
 
     client.on('message_create', async (msg) => {
         if (!msg.fromMe) return;
-        const to = msg.to;
+        const to = normalizeId(msg.to);
 
         if (msg.body === '!reactivar') {
             if (handedOff.has(to)) {
