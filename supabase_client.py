@@ -68,10 +68,10 @@ def _cuota_mensual(precio_final: float, entrada_inicial: float = 5000, meses: in
 async def calculate_unit_price(unit: dict, pricing: dict, meses_hasta_entrega: int = None, entrada_inicial: float = 5000) -> dict:
     if meses_hasta_entrega is None:
         meses_hasta_entrega = _meses_hasta_entrega()
-    area_interna = unit.get("area_interna", 0)
-    area_terraza = unit.get("area_terraza", 0)
-    descuento = unit.get("descuento_porcentaje", 0)
-    piso = unit.get("piso", 1)
+    area_interna = unit.get("area_interna") or 0
+    area_terraza = unit.get("area_terraza") or 0
+    descuento = unit.get("descuento_porcentaje") or 0
+    piso = unit.get("piso") or 1
 
     precio_m2 = 2000 + (50 * piso)  # prima por piso: $50 × número de piso
     precio_terraza_m2 = pricing.get("Terraza", 630)
